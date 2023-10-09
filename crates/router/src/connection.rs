@@ -2,6 +2,7 @@ use async_bb8_diesel::{AsyncConnection, ConnectionError};
 use bb8::{CustomizeConnection, PooledConnection};
 use diesel::PgConnection;
 use error_stack::{IntoReport, ResultExt};
+use router_env::{instrument, tracing};
 #[cfg(feature = "kms")]
 use external_services::kms;
 
@@ -29,6 +30,7 @@ impl CustomizeConnection<PgPooledConn, ConnectionError> for TestTransaction {
 }
 
 #[allow(clippy::expect_used)]
+#[instrument(skip(conf))]
 pub async fn redis_connection(
     conf: &crate::configs::settings::Settings,
 ) -> redis_interface::RedisConnectionPool {
@@ -60,6 +62,8 @@ pub async fn diesel_make_pg_pool(
     let manager = async_bb8_diesel::ConnectionManager::<PgConnection>::new(database_url);
     let mut pool = bb8::Pool::builder()
         .max_size(database.pool_size)
+        .min_idle(database.min_idle)
+        .idle_timeout(database.idle_timeout.map(std::time::Duration::from_secs))
         .connection_timeout(std::time::Duration::from_secs(database.connection_timeout));
 
     if test_transaction {
@@ -71,6 +75,7 @@ pub async fn diesel_make_pg_pool(
         .expect("Failed to create PostgreSQL connection pool")
 }
 
+#[instrument(skip(store))]
 pub async fn pg_connection_read(
     store: &crate::services::Store,
 ) -> errors::CustomResult<
@@ -98,6 +103,7 @@ pub async fn pg_connection_read(
         .change_context(errors::StorageError::DatabaseConnectionError)
 }
 
+#[instrument(skip(store))]
 pub async fn pg_connection_write(
     store: &crate::services::Store,
 ) -> errors::CustomResult<

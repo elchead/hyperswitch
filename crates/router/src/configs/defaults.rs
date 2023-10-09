@@ -27,6 +27,8 @@ impl Default for super::settings::Database {
             port: 5432,
             dbname: String::new(),
             pool_size: 5,
+            min_idle: Some(2),
+            idle_timeout: Some(10),
             connection_timeout: 10,
             #[cfg(feature = "kms")]
             kms_encrypted_password: String::new(),

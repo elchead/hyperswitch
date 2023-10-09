@@ -42,6 +42,8 @@ pub struct Database {
     pub dbname: String,
     pub pool_size: u32,
     pub connection_timeout: u64,
+    pub min_idle: Option<u32>,
+    pub idle_timeout: Option<u64>,
     #[cfg(feature = "kms")]
     pub kms_encrypted_password: String,
 }
@@ -66,6 +68,8 @@ impl Default for Database {
             port: 5432,
             dbname: String::new(),
             pool_size: 5,
+            min_idle: Some(2),
+            idle_timeout: Some(10),
             connection_timeout: 10,
             #[cfg(feature = "kms")]
             kms_encrypted_password: String::new(),
